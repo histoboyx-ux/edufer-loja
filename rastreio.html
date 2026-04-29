@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EDUFER — Rastrear Pedido</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyD-NbZZccUTRgMzk92yZJ709AZNo6JtFsY",
+    authDomain:        "edufer-93f8b.firebaseapp.com",
+    projectId:         "edufer-93f8b",
+    storageBucket:     "edufer-93f8b.firebasestorage.app",
+    messagingSenderId: "563132675062",
+    appId:             "1:563132675062:web:cf5c101dfe88c51c29cdd7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const STATUS_LABELS = {
+    aguardando_pagamento: { label:'Aguardando Pagamento', icon:'⏳', cor:'#f5c400' },
+    pagamento_confirmado: { label:'Pagamento Confirmado', icon:'✅', cor:'#3ecf80' },
+    em_separacao:         { label:'Em Separação',         icon:'📦', cor:'#f5c400' },
+    enviado:              { label:'Enviado / Em Trânsito', icon:'🚚', cor:'#00b4d8' },
+    entregue:             { label:'Entregue',              icon:'🎉', cor:'#3ecf80' },
+    cancelado:            { label:'Cancelado',             icon:'❌', cor:'#d95555' },
+  };
+
+  const STATUS_ORDER = ['aguardando_pagamento','pagamento_confirmado','em_separacao','enviado','entregue'];
+
+  async function buscarPedido() {
+    const num = document.getElementById('numPedido').value.trim().toUpperCase();
+    if (!num) { showError('Digite o número do pedido.'); return; }
+
+    document.getElementById('btnBuscar').disabled = true;
+    document.getElementById('btnBuscar').textContent = 'Buscando...';
+    document.getElementById('resultArea').innerHTML = '';
+    document.getElementById('errorMsg').style.display = 'none';
+
+    try {
+      const q = query(collection(db,'pedidos'), where('numero','==',num));
+      const snap = await getDocs(q);
+
+      if (snap.empty) { showError('Pedido não encontrado. Verifique o número e tente novamente.'); return; }
+
+      const pedido = snap.docs[0].data();
+      renderPedido(pedido);
+    } catch(e) {
+      console.error(e);
+      showError('Erro ao buscar pedido. Tente novamente.');
+    } finally {
+      document.getElementById('btnBuscar').disabled = false;
+      document.getElementById('btnBuscar').textContent = 'Rastrear';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('btnBuscar').disabled = false;
+    document.getElementById('btnBuscar').textContent = 'Rastrear';
+  }
+
+  function fmt(v) { return 'R$ ' + v.toFixed(2).replace('.',','); }
+
+  function renderPedido(p) {
+    const st = STATUS_LABELS[p.status] || { label: p.status, icon:'❓', cor:'#888' };
+    const curIdx = STATUS_ORDER.indexOf(p.status);
+    const hist = p.historico || [];
+
+    const stepsHTML = STATUS_ORDER.map((s,i) => {
+      const sl = STATUS_LABELS[s];
+      const done = i <= curIdx;
+      const active = i === curIdx;
+      return `<div class="timeline-step ${done?'done':''} ${active?'active':''}">
+        <div class="ts-dot">${done ? sl.icon : ''}</div>
+        <div class="ts-info">
+          <div class="ts-label">${sl.label}</div>
+          ${active && hist.length ? `<div class="ts-date">${formatDate(hist[hist.length-1].data)}${hist[hist.length-1].obs?' — '+hist[hist.length-1].obs:''}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('<div class="ts-line"></div>');
+
+    document.getElementById('resultArea').innerHTML = `
+      <div class="result-card">
+        <div class="rc-header">
+          <div>
+            <div class="rc-num">${p.numero}</div>
+            <div class="rc-date">Pedido em ${formatDate(p.criadoEm)}</div>
+          </div>
+          <div class="rc-status-badge" style="color:${st.cor};border-color:${st.cor}30;background:${st.cor}10;">
+            ${st.icon} ${st.label}
+          </div>
+        </div>
+
+        <div class="rc-section-title">Linha do Tempo</div>
+        <div class="timeline">${stepsHTML}</div>
+
+        <div class="rc-section-title" style="margin-top:1.5rem;">Itens do Pedido</div>
+        <div class="rc-items">
+          ${(p.itens||[]).map(i=>`<div class="rc-item">
+            <span>${i.nome} — ${i.cor} (${i.qty}x)</span>
+            <strong>${fmt(i.preco*i.qty)}</strong>
+          </div>`).join('')}
+          <div class="rc-item muted"><span>Frete ${p.frete?.tipo||''}</span><strong>${fmt(p.frete?.preco||0)}</strong></div>
+          <div class="rc-item total"><span>Total</span><strong>${fmt(p.total||0)}</strong></div>
+        </div>
+
+        <div class="rc-section-title" style="margin-top:1.5rem;">Entrega</div>
+        <div class="rc-addr">${p.endereco?.completo||'—'}</div>
+      </div>`;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  window.buscarPedido = buscarPedido;
+
+  // Auto-buscar se vier com ?pedido=EDU-XXX na URL
+  window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search);
+    const num = params.get('pedido');
+    if (num) {
+      document.getElementById('numPedido').value = num;
+      buscarPedido();
+    }
+  });
+</script>
+<style>
+  :root{--yellow:#f5c400;--bg:#181818;--text:#f0f0f0;--muted:#888;--border:rgba(245,196,0,.18);--card:#1e1e1e;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;min-height:100vh;}
+
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(245,196,0,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(245,196,0,.025) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0;}
+
+  nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(15,15,15,.96);border-bottom:1px solid rgba(245,196,0,.15);backdrop-filter:blur(12px);}
+  .logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.5rem;letter-spacing:.18em;color:var(--yellow);text-decoration:none;}
+  .nav-back{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid rgba(245,196,0,.2);padding:.35rem .9rem;transition:color .3s,border-color .3s;}
+  .nav-back:hover{color:var(--yellow);border-color:var(--yellow);}
+
+  .page{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:3rem 1.5rem 5rem;}
+
+  .page-tag{font-family:'Orbitron',sans-serif;font-size:.62rem;letter-spacing:.35em;color:var(--yellow);text-transform:uppercase;display:block;margin-bottom:.8rem;}
+  .page-title{font-family:'Orbitron',sans-serif;font-size:clamp(1.5rem,4vw,2.2rem);font-weight:900;letter-spacing:.04em;margin-bottom:.6rem;}
+  .page-sub{font-size:.9rem;color:var(--muted);margin-bottom:2.5rem;font-weight:300;}
+
+  .search-box{background:var(--card);border:1px solid var(--border);padding:1.5rem;margin-bottom:1.5rem;}
+  .search-label{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.6rem;font-family:'Orbitron',sans-serif;}
+  .search-row{display:flex;gap:.6rem;}
+  .search-input{flex:1;background:#111;border:1px solid rgba(255,255,255,.07);color:var(--text);padding:.85rem 1rem;font-family:'Orbitron',sans-serif;font-size:.9rem;letter-spacing:.08em;outline:none;border-radius:0;transition:border-color .25s;}
+  .search-input:focus{border-color:rgba(245,196,0,.5);}
+  .search-input::placeholder{color:#333;font-size:.75rem;letter-spacing:.05em;}
+  .btn-search{background:var(--yellow);color:#111;border:none;padding:.85rem 1.8rem;font-family:'Orbitron',sans-serif;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;font-weight:700;transition:background .3s;white-space:nowrap;}
+  .btn-search:hover{background:#ffe066;}
+  .btn-search:disabled{background:#333;color:#555;cursor:not-allowed;}
+
+  .error-msg{background:rgba(217,85,85,.08);border:1px solid rgba(217,85,85,.3);color:#d95555;padding:.8rem 1rem;font-size:.82rem;display:none;margin-bottom:1rem;}
+
+  /* Result card */
+  .result-card{background:var(--card);border:1px solid var(--border);overflow:hidden;}
+  .rc-header{display:flex;align-items:flex-start;justify-content:space-between;padding:1.4rem 1.5rem;border-bottom:1px solid rgba(245,196,0,.1);flex-wrap:wrap;gap:1rem;}
+  .rc-num{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:var(--yellow);letter-spacing:.06em;}
+  .rc-date{font-size:.75rem;color:var(--muted);margin-top:.2rem;}
+  .rc-status-badge{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid;padding:.4rem .9rem;font-weight:700;}
+
+  .rc-section-title{font-family:'Orbitron',sans-serif;font-size:.62rem;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);padding:.9rem 1.5rem .5rem;border-top:1px solid rgba(255,255,255,.04);}
+
+  /* Timeline */
+  .timeline{padding:1rem 1.5rem 1.2rem;display:flex;flex-direction:column;}
+  .timeline-step{display:flex;align-items:flex-start;gap:1rem;}
+  .ts-dot{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;background:#111;transition:all .3s;}
+  .timeline-step.done .ts-dot{border-color:var(--yellow);background:rgba(245,196,0,.08);}
+  .timeline-step.active .ts-dot{border-color:var(--yellow);background:rgba(245,196,0,.15);box-shadow:0 0 12px rgba(245,196,0,.3);}
+  .ts-info{flex:1;padding-top:.5rem;}
+  .ts-label{font-size:.88rem;font-weight:600;color:var(--muted);}
+  .timeline-step.done .ts-label,.timeline-step.active .ts-label{color:var(--text);}
+  .timeline-step.active .ts-label{color:var(--yellow);}
+  .ts-date{font-size:.72rem;color:var(--muted);margin-top:.15rem;}
+  .ts-line{width:2px;height:24px;background:rgba(255,255,255,.06);margin-left:17px;}
+  .timeline-step.done + .ts-line{background:rgba(245,196,0,.25);}
+
+  /* Items */
+  .rc-items{padding:.5rem 1.5rem 1rem;}
+  .rc-item{display:flex;justify-content:space-between;font-size:.83rem;color:var(--muted);padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.03);}
+  .rc-item:last-child{border-bottom:none;}
+  .rc-item strong{color:var(--text);}
+  .rc-item.total{border-top:1px solid rgba(245,196,0,.1);margin-top:.4rem;padding-top:.6rem;font-size:.95rem;}
+  .rc-item.total strong{color:var(--yellow);font-family:'Orbitron',sans-serif;}
+
+  .rc-addr{padding:.5rem 1.5rem 1.2rem;font-size:.82rem;color:var(--muted);line-height:1.6;}
+
+  @media(max-width:480px){
+    .search-row{flex-direction:column;}
+    .rc-header{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="edufer.html">EDUFER</a>
+  <a class="nav-back" href="edufer.html">&#x2190; Voltar à loja</a>
+</nav>
+
+<div class="page">
+  <span class="page-tag">&#x25CF; Acompanhamento</span>
+  <h1 class="page-title">Rastrear Pedido</h1>
+  <p class="page-sub">Digite o número do pedido recebido na confirmação</p>
+
+  <div class="search-box">
+    <span class="search-label">Número do pedido</span>
+    <div class="search-row">
+      <input class="search-input" id="numPedido" type="text" placeholder="EDU-20240427-1234"
+        onkeydown="if(event.key==='Enter')buscarPedido()">
+      <button class="btn-search" id="btnBuscar" onclick="buscarPedido()">Rastrear</button>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div id="resultArea"></div>
+</div>
+</body>
+</html>

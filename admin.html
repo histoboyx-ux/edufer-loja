@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EDUFER — Painel Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--y:#f5c400;--y2:#ffe066;--bg:#111;--bg2:#171717;--bg3:#1e1e1e;--text:#f0f0f0;--muted:#777;--border:rgba(245,196,0,.15);--red:#d95555;--green:#3ecf80;--blue:#00b4d8;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;min-height:100vh;}
+/* ── LOGIN ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);padding:1rem;}
+.login-wrap{width:100%;max-width:380px;}
+.login-card{background:var(--bg3);border:1px solid var(--border);padding:2.5rem;}
+.login-top{height:3px;background:var(--y);box-shadow:0 0 20px rgba(245,196,0,.4);margin:-2.5rem -2.5rem 2rem;}
+.login-logo{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;color:var(--y);letter-spacing:.15em;text-align:center;margin-bottom:.2rem;}
+.login-sub{text-align:center;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem;}
+.field-label{font-size:.63rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.35rem;}
+.field-input{width:100%;background:#0d0d0d;border:1px solid rgba(255,255,255,.07);color:var(--text);padding:.8rem 1rem;font-family:'Rajdhani',sans-serif;font-size:.95rem;outline:none;border-radius:0;transition:border-color .25s;margin-bottom:1rem;}
+.field-input:focus{border-color:rgba(245,196,0,.45);}
+.field-input::placeholder{color:#333;}
+.login-step{display:none;}.login-step.active{display:block;}
+.btn-login{width:100%;background:var(--y);color:#111;border:none;padding:.9rem;font-family:'Orbitron',sans-serif;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;font-weight:700;transition:background .3s;margin-top:.3rem;}
+.btn-login:hover{background:var(--y2);}
+.btn-login:disabled{background:#333;color:#555;cursor:not-allowed;}
+.login-err{color:var(--red);font-size:.75rem;text-align:center;margin-top:.7rem;min-height:1.1rem;}
+.login-info{background:rgba(245,196,0,.06);border-left:2px solid var(--y);padding:.6rem .9rem;font-size:.78rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.5;}
+.attempts-bar{display:flex;gap:.3rem;margin-bottom:1rem;}
+.att-dot{flex:1;height:4px;border-radius:2px;background:#222;}
+.att-dot.used{background:var(--red);}
+/* ── LAYOUT ── */
+#adminScreen{display:none;min-height:100vh;flex-direction:column;}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.98);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.5rem;gap:1rem;flex-wrap:wrap;}
+.topbar-logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.3rem;color:var(--y);letter-spacing:.15em;}
+.topbar-right{display:flex;align-items:center;gap:.8rem;}
+.session-timer{font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--muted);letter-spacing:.1em;border:1px solid rgba(255,255,255,.07);padding:.3rem .7rem;}
+.btn-logout{background:transparent;border:1px solid rgba(217,85,85,.3);color:var(--red);font-family:'Orbitron',sans-serif;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;padding:.35rem .9rem;cursor:pointer;transition:background .2s;}
+.btn-logout:hover{background:rgba(217,85,85,.1);}
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto;}
+.tab{font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;padding:.9rem 1.4rem;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;transition:color .25s,border-color .25s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--y);border-bottom-color:var(--y);}
+.tab-panel{display:none;padding:1.5rem;}.tab-panel.active{display:block;}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.stat-card{background:var(--bg3);border:1px solid var(--border);padding:1.2rem 1.4rem;}
+.stat-card-num{font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:700;color:var(--y);display:block;line-height:1;}
+.stat-card-label{font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:.35rem;display:block;}
+.stat-card-sub{font-size:.75rem;color:var(--muted);margin-top:.2rem;}
+/* TABLES */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.7rem;}
+.section-title{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+.btn-add{background:var(--y);color:#111;border:none;padding:.55rem 1.2rem;font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;font-weight:700;transition:background .2s;}
+.btn-add:hover{background:var(--y2);}
+.tbl{width:100%;border-collapse:collapse;font-size:.85rem;}
+.tbl th{font-family:'Orbitron',sans-serif;font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:.7rem .9rem;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);background:var(--bg2);}
+.tbl td{padding:.75rem .9rem;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text);vertical-align:middle;}
+.tbl tr:hover td{background:rgba(255,255,255,.02);}
+.badge{display:inline-block;font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .6rem;border:1px solid;font-weight:700;}
+.badge-yellow{color:var(--y);border-color:rgba(245,196,0,.3);background:rgba(245,196,0,.07);}
+.badge-green{color:var(--green);border-color:rgba(62,207,128,.3);background:rgba(62,207,128,.07);}
+.badge-blue{color:var(--blue);border-color:rgba(0,180,216,.3);background:rgba(0,180,216,.07);}
+.badge-red{color:var(--red);border-color:rgba(217,85,85,.3);background:rgba(217,85,85,.07);}
+.badge-gray{color:var(--muted);border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.04);}
+/* ACTION BTNS */
+.act-btn{background:none;border:1px solid rgba(255,255,255,.1);color:var(--muted);padding:.3rem .7rem;font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-right:.3rem;}
+.act-btn:hover{border-color:var(--y);color:var(--y);}
+.act-btn.red:hover{border-color:var(--red);color:var(--red);}
+.act-btn.green:hover{border-color:var(--green);color:var(--green);}
+/* MODAL FORM */
+.form-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center;padding:1rem;}
+.form-overlay.open{display:flex;}
+.form-modal{background:var(--bg3);border:1px solid var(--border);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;}
+.fm-top{height:3px;background:var(--y);}
+.fm-header{padding:1.3rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center;}
+.fm-title{font-family:'Orbitron',sans-serif;font-size:.85rem;font-weight:700;color:var(--y);}
+.fm-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;transition:color .2s;}
+.fm-close:hover{color:var(--y);}
+.fm-body{padding:1.5rem;}
+.fm-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.fm-row.single{grid-template-columns:1fr;}
+.fm-group{display:flex;flex-direction:column;gap:.3rem;}
+.fm-group label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+.fm-group input,.fm-group select,.fm-group textarea{background:#0d0d0d;border:1px solid rgba(255,255,255,.07);color:var(--text);padding:.7rem .9rem;font-family:'Rajdhani',sans-serif;font-size:.92rem;outline:none;border-radius:0;transition:border-color .25s;-webkit-appearance:none;}
+.fm-group input:focus,.fm-group select:focus,.fm-group textarea:focus{border-color:rgba(245,196,0,.4);}
+.fm-group textarea{resize:vertical;min-height:80px;}
+.fm-footer{padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:.7rem;justify-content:flex-end;}
+.btn-save{background:var(--y);color:#111;border:none;padding:.75rem 1.8rem;font-family:'Orbitron',sans-serif;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;font-weight:700;transition:background .2s;}
+.btn-save:hover{background:var(--y2);}
+.btn-cancel-modal{background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--muted);padding:.75rem 1.2rem;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.btn-cancel-modal:hover{border-color:rgba(255,255,255,.25);color:var(--text);}
+/* STOCK */
+.stock-input{width:70px;background:#0d0d0d;border:1px solid rgba(255,255,255,.08);color:var(--text);padding:.35rem .5rem;font-family:'Orbitron',sans-serif;font-size:.78rem;text-align:center;outline:none;}
+.stock-input:focus{border-color:rgba(245,196,0,.4);}
+/* ORDER DETAIL */
+.order-expand{display:none;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);}
+.order-expand.open{display:table-row;}
+.order-expand td{padding:1rem 1.2rem;}
+.obs-row{display:flex;gap:.5rem;margin-top:.7rem;}
+.obs-inp{flex:1;background:#0d0d0d;border:1px solid rgba(255,255,255,.07);color:var(--text);padding:.5rem .8rem;font-family:'Rajdhani',sans-serif;font-size:.85rem;outline:none;border-radius:0;}
+.obs-inp:focus{border-color:rgba(245,196,0,.4);}
+/* STATUS SELECT */
+.status-sel{background:#0d0d0d;border:1px solid rgba(255,255,255,.08);color:var(--text);padding:.35rem .6rem;font-family:'Rajdhani',sans-serif;font-size:.82rem;outline:none;-webkit-appearance:none;cursor:pointer;}
+.status-sel:focus{border-color:rgba(245,196,0,.4);}
+/* CHART BAR */
+.mini-chart{display:flex;align-items:flex-end;gap:4px;height:60px;margin-top:.7rem;}
+.mini-bar{flex:1;background:rgba(245,196,0,.25);border-top:2px solid var(--y);min-width:8px;transition:height .4s;}
+/* TOGGLE */
+.toggle{position:relative;display:inline-block;width:38px;height:20px;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#333;border-radius:20px;cursor:pointer;transition:.3s;}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#888;border-radius:50%;transition:.3s;}
+.toggle input:checked+.toggle-slider{background:rgba(245,196,0,.3);}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:var(--y);}
+/* MISC */
+.empty-state{text-align:center;color:var(--muted);padding:3rem;font-size:.85rem;}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.chart-card{background:var(--bg3);border:1px solid var(--border);padding:1.2rem;}
+.chart-label{font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;display:block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:600px){.chart-row,.fm-row{grid-template-columns:1fr;}.tbl th:nth-child(n+4),.tbl td:nth-child(n+4){display:none;}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen">
+ <div class="login-wrap">
+  <div class="login-card">
+   <div class="login-top"></div>
+   <div class="login-logo">EDUFER</div>
+   <div class="login-sub">Painel Administrativo</div>
+
+   <!-- STEP 1: senha mestra -->
+   <div class="login-step active" id="lstep1">
+    <div class="login-info">🔐 Primeiro fator: senha mestra</div>
+    <label class="field-label">Senha Mestra</label>
+    <input class="field-input" type="password" id="masterPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkMaster()">
+    <div class="attempts-bar" id="attBar">
+     <div class="att-dot" id="a1"></div><div class="att-dot" id="a2"></div>
+     <div class="att-dot" id="a3"></div><div class="att-dot" id="a4"></div><div class="att-dot" id="a5"></div>
+    </div>
+    <button class="btn-login" id="btnMaster" onclick="console.log('clicou'); checkMaster();">Continuar →</button>
+    <div class="login-err" id="err1"></div>
+   </div>
+
+   <!-- STEP 2: Firebase Auth -->
+   <div class="login-step" id="lstep2">
+    <div class="login-info">✅ Senha mestra verificada!<br>Agora faça login com seu e-mail.</div>
+    <label class="field-label">E-mail</label>
+    <input class="field-input" type="email" id="authEmail" placeholder="seu@email.com" value="lucosl260@gmail.com">
+    <label class="field-label">Senha</label>
+    <input class="field-input" type="password" id="authPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-login" id="btnLogin" onclick="doLogin()">Entrar no Painel</button>
+    <div class="login-err" id="err2"></div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div id="adminScreen">
+ <div class="topbar">
+  <div class="topbar-logo">EDUFER <span style="font-size:.55rem;color:var(--muted);letter-spacing:.15em;">ADMIN</span></div>
+  <div class="topbar-right">
+   <div class="session-timer" id="sessionTimer">⏱ 30:00</div>
+   <button class="btn-logout" onclick="doLogout()">Sair</button>
+  </div>
+ </div>
+
+ <!-- TABS -->
+ <div class="tabs">
+  <div class="tab active" onclick="showTab('dashboard')">📊 Dashboard</div>
+  <div class="tab" onclick="showTab('pedidos')">📦 Pedidos</div>
+  <div class="tab" onclick="showTab('produtos')">🛒 Produtos</div>
+  <div class="tab" onclick="showTab('cursos')">🎓 Cursos</div>
+  <div class="tab" onclick="showTab('estoque')">📋 Estoque</div>
+  <div class="tab" onclick="showTab('clientes')">👥 Clientes</div>
+ </div>
+
+ <!-- ─── DASHBOARD ─── -->
+ <div class="tab-panel active" id="tab-dashboard">
+  <div class="stats-grid">
+   <div class="stat-card"><span class="stat-card-num" id="dReceita">R$ 0</span><span class="stat-card-label">Receita Total</span><span class="stat-card-sub" id="dReceitaSub"></span></div>
+   <div class="stat-card"><span class="stat-card-num" id="dPedidos">0</span><span class="stat-card-label">Total de Pedidos</span></div>
+   <div class="stat-card"><span class="stat-card-num" id="dPendentes">0</span><span class="stat-card-label">Aguard. Pagamento</span></div>
+   <div class="stat-card"><span class="stat-card-num" id="dEnviados">0</span><span class="stat-card-label">Enviados</span></div>
+   <div class="stat-card"><span class="stat-card-num" id="dProdutos">0</span><span class="stat-card-label">Produtos Ativos</span></div>
+   <div class="stat-card"><span class="stat-card-num" id="dEstoque">0</span><span class="stat-card-label">Itens em Estoque</span></div>
+  </div>
+  <div class="chart-row">
+   <div class="chart-card">
+    <span class="chart-label">Pedidos por status</span>
+    <div id="statusChart"></div>
+   </div>
+   <div class="chart-card">
+    <span class="chart-label">Últimos pedidos</span>
+    <div id="recentOrders" style="font-size:.82rem;display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;"></div>
+   </div>
+  </div>
+ </div>
+
+ <!-- ─── PEDIDOS ─── -->
+ <div class="tab-panel" id="tab-pedidos">
+  <div class="section-head">
+   <span class="section-title">Todos os Pedidos</span>
+   <div style="display:flex;gap:.5rem;">
+    <select id="filterStatus" onchange="renderPedidos()" style="background:#0d0d0d;border:1px solid rgba(255,255,255,.08);color:var(--text);padding:.4rem .7rem;font-family:'Rajdhani',sans-serif;font-size:.82rem;outline:none;-webkit-appearance:none;">
+     <option value="">Todos os status</option>
+     <option value="aguardando_pagamento">Aguardando Pagamento</option>
+     <option value="pagamento_confirmado">Pagamento Confirmado</option>
+     <option value="em_separacao">Em Separação</option>
+     <option value="enviado">Enviado</option>
+     <option value="entregue">Entregue</option>
+     <option value="cancelado">Cancelado</option>
+    </select>
+   </div>
+  </div>
+  <div style="overflow-x:auto;">
+   <table class="tbl">
+    <thead><tr>
+     <th>Pedido</th><th>Cliente</th><th>Total</th><th>Status</th><th>Data</th><th>Ações</th>
+    </tr></thead>
+    <tbody id="pedidosTbody"></tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- ─── PRODUTOS ─── -->
+ <div class="tab-panel" id="tab-produtos">
+  <div class="section-head">
+   <span class="section-title">Produtos</span>
+   <button class="btn-add" onclick="openProdForm()">+ Novo Produto</button>
+  </div>
+  <div style="overflow-x:auto;">
+   <table class="tbl">
+    <thead><tr>
+     <th>Nome</th><th>Cor</th><th>Preço</th><th>Estoque</th><th>Ativo</th><th>Ações</th>
+    </tr></thead>
+    <tbody id="produtosTbody"></tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- ─── CURSOS ─── -->
+ <div class="tab-panel" id="tab-cursos">
+  <div class="section-head">
+   <span class="section-title">Cursos</span>
+   <button class="btn-add" onclick="openCursoForm()">+ Novo Curso</button>
+  </div>
+  <div style="overflow-x:auto;">
+   <table class="tbl">
+    <thead><tr>
+     <th>Título</th><th>Nível</th><th>Preço</th><th>Duração</th><th>Ativo</th><th>Ações</th>
+    </tr></thead>
+    <tbody id="cursosTbody"></tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- ─── ESTOQUE ─── -->
+ <div class="tab-panel" id="tab-estoque">
+  <div class="section-head"><span class="section-title">Gerenciar Estoque</span></div>
+  <div style="overflow-x:auto;">
+   <table class="tbl">
+    <thead><tr>
+     <th>Produto</th><th>Cor</th><th>Estoque Atual</th><th>Atualizar</th><th>Alerta</th>
+    </tr></thead>
+    <tbody id="estoqueTbody"></tbody>
+   </table>
+  </div>
+ </div>
+</div>
+
+<!-- ─── CLIENTES ─── -->
+ <div class="tab-panel" id="tab-clientes">
+  <div class="section-head">
+   <span class="section-title">Clientes Cadastrados</span>
+   <div style="display:flex;gap:.5rem;align-items:center;">
+    <span id="clienteCount" style="font-size:.75rem;color:var(--muted);font-family:'Orbitron',sans-serif;"></span>
+   </div>
+  </div>
+  <div style="overflow-x:auto;">
+   <table class="tbl">
+    <thead><tr>
+     <th>Nome</th><th>E-mail</th><th>Pedidos</th><th>Total Gasto</th><th>Membro Desde</th><th>Último Login</th><th>Ações</th>
+    </tr></thead>
+    <tbody id="clientesTbody"><tr><td colspan="7" class="empty-state">Carregando clientes...</td></tr></tbody>
+   </table>
+  </div>
+ </div>
+
+<!-- ─── MODAL PRODUTO ─── -->
+<div class="form-overlay" id="prodModal" onclick="if(event.target===this)closeProdForm()">
+ <div class="form-modal">
+  <div class="fm-top"></div>
+  <div class="fm-header">
+   <span class="fm-title" id="prodModalTitle">Novo Produto</span>
+   <button class="fm-close" onclick="closeProdForm()">✕</button>
+  </div>
+  <div class="fm-body">
+   <input type="hidden" id="prodId">
+   <div class="fm-row"><div class="fm-group"><label>Nome *</label><input type="text" id="prodNome" placeholder="Ex: Prateleira Industrial PRO"></div>
+   <div class="fm-group"><label>Cor *</label><input type="text" id="prodCor" placeholder="Ex: Preto Fosco"></div></div>
+   <div class="fm-row"><div class="fm-group"><label>Preço (R$) *</label><input type="number" id="prodPreco" step="0.01" placeholder="0,00"></div>
+   <div class="fm-group"><label>Estoque *</label><input type="number" id="prodEstoque" placeholder="0"></div></div>
+   <div class="fm-row single"><div class="fm-group"><label>Descrição</label><textarea id="prodDesc" placeholder="Descrição do produto..."></textarea></div></div>
+   <div class="fm-row single"><div class="fm-group"><label>Alerta de estoque baixo (qtd)</label><input type="number" id="prodAlerta" placeholder="5"></div></div>
+  </div>
+  <div class="fm-footer">
+   <button class="btn-cancel-modal" onclick="closeProdForm()">Cancelar</button>
+   <button class="btn-save" onclick="salvarProduto()">Salvar Produto</button>
+  </div>
+ </div>
+</div>
+
+<!-- ─── MODAL CURSO ─── -->
+<div class="form-overlay" id="cursoModal" onclick="if(event.target===this)closeCursoForm()">
+ <div class="form-modal">
+  <div class="fm-top"></div>
+  <div class="fm-header">
+   <span class="fm-title" id="cursoModalTitle">Novo Curso</span>
+   <button class="fm-close" onclick="closeCursoForm()">✕</button>
+  </div>
+  <div class="fm-body">
+   <input type="hidden" id="cursoId">
+   <div class="fm-row single"><div class="fm-group"><label>Título *</label><input type="text" id="cursoTitulo" placeholder="Ex: Soldagem MIG — Do Zero ao Profissional"></div></div>
+   <div class="fm-row">
+    <div class="fm-group"><label>Nível</label>
+     <select id="cursoNivel"><option>Iniciante</option><option>Intermediário</option><option>Avançado</option><option>Profissional</option></select>
+    </div>
+    <div class="fm-group"><label>Preço (R$) *</label><input type="number" id="cursoPreco" step="0.01" placeholder="0,00"></div>
+   </div>
+   <div class="fm-row">
+    <div class="fm-group"><label>Duração (horas)</label><input type="number" id="cursoDuracao" placeholder="Ex: 40"></div>
+    <div class="fm-group"><label>Nº de Aulas</label><input type="number" id="cursoAulas" placeholder="Ex: 80"></div>
+   </div>
+   <div class="fm-row single"><div class="fm-group"><label>Descrição</label><textarea id="cursoDesc" placeholder="Descrição do curso..."></textarea></div></div>
+  </div>
+  <div class="fm-footer">
+   <button class="btn-cancel-modal" onclick="closeCursoForm()">Cancelar</button>
+   <button class="btn-save" onclick="salvarCurso()">Salvar Curso</button>
+  </div>
+ </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, deleteDoc, arrayUnion, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyD-NbZZccUTRgMzk92yZJ709AZNo6JtFsY",
+  authDomain:        "edufer-93f8b.firebaseapp.com",
+  projectId:         "edufer-93f8b",
+  storageBucket:     "edufer-93f8b.firebasestorage.app",
+  messagingSenderId: "563132675062",
+  appId:             "1:563132675062:web:cf5c101dfe88c51c29cdd7"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+// ── SENHA MESTRA (altere aqui) ──
+const MASTER = 'Edufer@Admin2025!';
+const ADMIN_EMAIL = 'lucosl260@gmail.com';
+const MAX_ATTEMPTS = 5;
+
+let attempts = 0;
+let masterOk = false;
+let sessionInterval, countdownInterval;
+let SESSION_MINS = 30;
+let allPedidos = [], allProdutos = [], allCursos = [];
+
+// ── AUTENTICAÇÃO ──
+onAuthStateChanged(auth, user => {
+  if (user && masterOk) startAdmin();
+});
+
+window.checkMaster = function() {
+  const pass = document.getElementById('masterPass').value.trim();
+  const err  = document.getElementById('err1');
+  const btn  = document.querySelector('#lstep1 .btn-login');
+
+  if (!pass) { err.textContent = 'Digite a senha mestra.'; return; }
+
+  if (pass === MASTER) {
+    masterOk = true;
+    err.textContent = '';
+    document.getElementById('lstep1').classList.remove('active');
+    document.getElementById('lstep2').classList.add('active');
+    document.getElementById('authEmail').focus();
+  } else {
+    attempts++;
+    const dot = document.getElementById('a'+Math.min(attempts,5));
+    if (dot) dot.classList.add('used');
+    if (attempts >= MAX_ATTEMPTS) {
+      err.textContent = '🚫 Bloqueado por 60 segundos.';
+      btn.disabled = true;
+      document.getElementById('masterPass').disabled = true;
+      setTimeout(() => {
+        attempts = 0;
+        document.querySelectorAll('.att-dot').forEach(d=>d.classList.remove('used'));
+        btn.disabled = false;
+        document.getElementById('masterPass').disabled = false;
+        err.textContent = '';
+      }, 60000);
+    } else {
+      err.textContent = '❌ Senha incorreta. ' + (MAX_ATTEMPTS - attempts) + ' tentativa(s) restante(s).';
+    }
+  }
+};
+
+window.doLogin = async function() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass  = document.getElementById('authPass').value;
+  const btn   = document.getElementById('btnLogin');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  document.getElementById('err2').textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    startAdmin();
+  } catch(e) {
+    const msgs = {
+      'auth/invalid-credential': 'E-mail ou senha incorretos.',
+      'auth/too-many-requests':  '🚫 Muitas tentativas. Tente mais tarde.',
+      'auth/user-not-found':     'Usuário não encontrado.',
+      'auth/wrong-password':     'Senha incorreta.',
+    };
+    document.getElementById('err2').textContent = msgs[e.code] || 'Erro: '+e.message;
+    btn.disabled = false; btn.textContent = 'Entrar no Painel';
+  }
+};
+
+window.doLogout = async function() {
+  if (!confirm('Deseja sair do painel?')) return;
+  clearInterval(sessionInterval);
+  clearInterval(countdownInterval);
+  await signOut(auth);
+  masterOk = false;
+  document.getElementById('adminScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('lstep1').classList.add('active');
+  document.getElementById('lstep2').classList.remove('active');
+  document.getElementById('masterPass').value = '';
+  document.getElementById('authPass').value = '';
+  document.getElementById('btnLogin').disabled = false;
+  document.getElementById('btnLogin').textContent = 'Entrar no Painel';
+  attempts = 0;
+  document.querySelectorAll('.att-dot').forEach(d=>d.classList.remove('used'));
+};
+
+function startAdmin() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminScreen').style.display = 'flex';
+  document.getElementById('adminScreen').style.flexDirection = 'column';
+  startSessionTimer();
+  loadAll();
+}
+
+// ── SESSION TIMER ──
+function startSessionTimer() {
+  let secs = SESSION_MINS * 60;
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    secs--;
+    const m = String(Math.floor(secs/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    document.getElementById('sessionTimer').textContent = `⏱ ${m}:${s}`;
+    if (secs <= 0) { clearInterval(countdownInterval); doLogout(); }
+  }, 1000);
+  // Reset on activity
+  ['click','keydown','mousemove'].forEach(ev => {
+    document.addEventListener(ev, () => { secs = SESSION_MINS * 60; }, { passive: true });
+  });
+}
+
+// ── STATUS ──
+const STATUS = {
+  aguardando_pagamento: { label:'Aguard. Pagamento', badge:'badge-yellow' },
+  pagamento_confirmado: { label:'Pag. Confirmado',   badge:'badge-green' },
+  em_separacao:         { label:'Em Separação',       badge:'badge-blue' },
+  enviado:              { label:'Enviado',             badge:'badge-blue' },
+  entregue:             { label:'Entregue',            badge:'badge-green' },
+  cancelado:            { label:'Cancelado',           badge:'badge-red' },
+};
+const STATUS_NEXT = {
+  aguardando_pagamento:'pagamento_confirmado',
+  pagamento_confirmado:'em_separacao',
+  em_separacao:'enviado', enviado:'entregue'
+};
+
+function fmt(v){ return 'R$ '+(v||0).toFixed(2).replace('.',','); }
+function fdate(iso){ if(!iso)return'—'; const d=new Date(iso); return d.toLocaleDateString('pt-BR'); }
+
+// ── LOAD ALL ──
+function loadAll() {
+  // Pedidos
+  onSnapshot(query(collection(db,'pedidos'),orderBy('criadoEm','desc')), snap => {
+    allPedidos = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderDashboard(); renderPedidos();
+  });
+  // Produtos
+  onSnapshot(collection(db,'produtos'), snap => {
+    allProdutos = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderProdutos(); renderEstoque(); renderDashboard();
+  });
+  // Cursos
+  onSnapshot(collection(db,'cursos'), snap => {
+    allCursos = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderCursos();
+  });
+}
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  const receita = allPedidos.filter(p=>p.status!=='cancelado').reduce((s,p)=>s+(p.total||0),0);
+  const pendentes= allPedidos.filter(p=>p.status==='aguardando_pagamento').length;
+  const enviados = allPedidos.filter(p=>p.status==='enviado').length;
+  const ativos   = allProdutos.filter(p=>p.ativo!==false).length;
+  const estoque  = allProdutos.reduce((s,p)=>s+(p.estoque||0),0);
+  document.getElementById('dReceita').textContent = 'R$ '+receita.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('dPedidos').textContent = allPedidos.length;
+  document.getElementById('dPendentes').textContent = pendentes;
+  document.getElementById('dEnviados').textContent = enviados;
+  document.getElementById('dProdutos').textContent = ativos;
+  document.getElementById('dEstoque').textContent = estoque;
+
+  // Status mini chart
+  const statuses = Object.keys(STATUS);
+  const counts = statuses.map(s=>allPedidos.filter(p=>p.status===s).length);
+  const max = Math.max(...counts,1);
+  document.getElementById('statusChart').innerHTML =
+    '<div class="mini-chart">'+
+    statuses.map((s,i)=>`<div class="mini-bar" style="height:${Math.max(8,(counts[i]/max)*54)}px" title="${STATUS[s].label}: ${counts[i]}"></div>`).join('')+
+    '</div>'+
+    '<div style="display:flex;gap:4px;margin-top:.4rem;flex-wrap:wrap;">'+
+    statuses.map((s,i)=>`<span style="font-size:.65rem;color:var(--muted)">${STATUS[s].label}: <strong style="color:var(--text)">${counts[i]}</strong></span>`).join(' &nbsp;')+
+    '</div>';
+
+  // Recent orders
+  document.getElementById('recentOrders').innerHTML = allPedidos.slice(0,5).map(p=>`
+    <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.04);padding:.3rem 0;">
+     <span style="color:var(--muted);font-size:.75rem;">${p.numero||'—'}<br><span style="font-size:.7rem;">${p.cliente?.nome||'—'}</span></span>
+     <span style="font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--y)">${fmt(p.total)}</span>
+    </div>`).join('');
+}
+
+// ── PEDIDOS ──
+window.renderPedidos = function() {
+  const filter = document.getElementById('filterStatus')?.value||'';
+  const list = filter ? allPedidos.filter(p=>p.status===filter) : allPedidos;
+  renderPedidosList(list);
+};
+
+window.toggleOrder = function(id) {
+  const el = document.getElementById('exp_'+id);
+  el.classList.toggle('open');
+};
+
+window.avancar = async function(id, novoStatus) {
+  const obs = document.getElementById('obsInp_'+id)?.value.trim()||'';
+  await updateDoc(doc(db,'pedidos',id),{
+    status:novoStatus,
+    historico:arrayUnion({status:novoStatus,data:new Date().toISOString(),obs})
+  });
+};
+
+window.cancelarPed = async function(id) {
+  if(!confirm('Cancelar este pedido?'))return;
+  await updateDoc(doc(db,'pedidos',id),{
+    status:'cancelado',
+    historico:arrayUnion({status:'cancelado',data:new Date().toISOString(),obs:'Cancelado pelo admin'})
+  });
+};
+
+window.addObs = async function(id) {
+  const obs = document.getElementById('obsInp_'+id)?.value.trim();
+  if(!obs)return;
+  await updateDoc(doc(db,'pedidos',id),{historico:arrayUnion({status:'obs',data:new Date().toISOString(),obs})});
+  document.getElementById('obsInp_'+id).value='';
+};
+
+// ── PRODUTOS ──
+function renderProdutos() {
+  const tbody = document.getElementById('produtosTbody');
+  if(!allProdutos.length){tbody.innerHTML=`<tr><td colspan="6" class="empty-state">Nenhum produto cadastrado</td></tr>`;return;}
+  tbody.innerHTML = allProdutos.map(p=>`
+   <tr>
+    <td>${p.nome||'—'}</td>
+    <td>${p.cor||'—'}</td>
+    <td style="font-family:'Orbitron',sans-serif;color:var(--y)">${fmt(p.preco)}</td>
+    <td><span class="${(p.estoque||0)<(p.alerta||5)?'badge badge-red':'badge badge-green'}">${p.estoque||0} un</span></td>
+    <td>
+     <label class="toggle"><input type="checkbox" ${p.ativo!==false?'checked':''} onchange="toggleAtivo('produtos','${p.id}',this.checked)"><span class="toggle-slider"></span></label>
+    </td>
+    <td>
+     <button class="act-btn" onclick="editProd('${p.id}')">Editar</button>
+     <button class="act-btn red" onclick="deleteProd('${p.id}')">Excluir</button>
+    </td>
+   </tr>`).join('');
+}
+
+function renderEstoque() {
+  const tbody = document.getElementById('estoqueTbody');
+  if(!allProdutos.length){tbody.innerHTML=`<tr><td colspan="5" class="empty-state">Nenhum produto</td></tr>`;return;}
+  tbody.innerHTML = allProdutos.map(p=>`
+   <tr>
+    <td>${p.nome||'—'}</td>
+    <td>${p.cor||'—'}</td>
+    <td><span class="${(p.estoque||0)<(p.alerta||5)?'badge badge-red':'badge badge-green'}">${p.estoque||0} un</span></td>
+    <td>
+     <div style="display:flex;align-items:center;gap:.5rem;">
+      <input class="stock-input" type="number" id="stk_${p.id}" value="${p.estoque||0}" min="0">
+      <button class="act-btn green" onclick="updateEstoque('${p.id}')">Salvar</button>
+     </div>
+    </td>
+    <td><span class="${(p.estoque||0)<(p.alerta||5)?'badge badge-red':'badge badge-gray'}">${(p.estoque||0)<(p.alerta||5)?'⚠ Baixo':'OK'}</span></td>
+   </tr>`).join('');
+}
+
+window.updateEstoque = async function(id) {
+  const val = parseInt(document.getElementById('stk_'+id)?.value)||0;
+  await updateDoc(doc(db,'produtos',id),{estoque:val});
+};
+
+window.toggleAtivo = async function(col,id,val) {
+  await updateDoc(doc(db,col,id),{ativo:val});
+};
+
+window.openProdForm = function(id) {
+  document.getElementById('prodId').value='';
+  document.getElementById('prodNome').value='';
+  document.getElementById('prodCor').value='';
+  document.getElementById('prodPreco').value='';
+  document.getElementById('prodEstoque').value='';
+  document.getElementById('prodDesc').value='';
+  document.getElementById('prodAlerta').value='5';
+  document.getElementById('prodModalTitle').textContent='Novo Produto';
+  document.getElementById('prodModal').classList.add('open');
+};
+
+window.editProd = function(id) {
+  const p = allProdutos.find(x=>x.id===id); if(!p)return;
+  document.getElementById('prodId').value=id;
+  document.getElementById('prodNome').value=p.nome||'';
+  document.getElementById('prodCor').value=p.cor||'';
+  document.getElementById('prodPreco').value=p.preco||'';
+  document.getElementById('prodEstoque').value=p.estoque||'';
+  document.getElementById('prodDesc').value=p.desc||'';
+  document.getElementById('prodAlerta').value=p.alerta||5;
+  document.getElementById('prodModalTitle').textContent='Editar Produto';
+  document.getElementById('prodModal').classList.add('open');
+};
+
+window.closeProdForm = ()=>document.getElementById('prodModal').classList.remove('open');
+
+window.salvarProduto = async function() {
+  const id    = document.getElementById('prodId').value;
+  const data  = {
+    nome:    document.getElementById('prodNome').value.trim(),
+    cor:     document.getElementById('prodCor').value.trim(),
+    preco:   parseFloat(document.getElementById('prodPreco').value)||0,
+    estoque: parseInt(document.getElementById('prodEstoque').value)||0,
+    desc:    document.getElementById('prodDesc').value.trim(),
+    alerta:  parseInt(document.getElementById('prodAlerta').value)||5,
+    ativo:   true,
+  };
+  if(!data.nome||!data.preco){alert('Preencha nome e preço.');return;}
+  if(id) await updateDoc(doc(db,'produtos',id),data);
+  else   await addDoc(collection(db,'produtos'),data);
+  closeProdForm();
+};
+
+window.deleteProd = async function(id) {
+  if(!confirm('Excluir este produto?'))return;
+  await deleteDoc(doc(db,'produtos',id));
+};
+
+// ── CURSOS ──
+function renderCursos() {
+  const tbody = document.getElementById('cursosTbody');
+  if(!allCursos.length){tbody.innerHTML=`<tr><td colspan="6" class="empty-state">Nenhum curso cadastrado</td></tr>`;return;}
+  tbody.innerHTML = allCursos.map(c=>`
+   <tr>
+    <td>${c.titulo||'—'}</td>
+    <td><span class="badge badge-yellow">${c.nivel||'—'}</span></td>
+    <td style="font-family:'Orbitron',sans-serif;color:var(--y)">${fmt(c.preco)}</td>
+    <td style="color:var(--muted)">${c.duracao||'—'}h / ${c.aulas||'—'} aulas</td>
+    <td>
+     <label class="toggle"><input type="checkbox" ${c.ativo!==false?'checked':''} onchange="toggleAtivo('cursos','${c.id}',this.checked)"><span class="toggle-slider"></span></label>
+    </td>
+    <td>
+     <button class="act-btn" onclick="editCurso('${c.id}')">Editar</button>
+     <button class="act-btn red" onclick="deleteCurso('${c.id}')">Excluir</button>
+    </td>
+   </tr>`).join('');
+}
+
+window.openCursoForm = function() {
+  document.getElementById('cursoId').value='';
+  document.getElementById('cursoTitulo').value='';
+  document.getElementById('cursoPreco').value='';
+  document.getElementById('cursoDuracao').value='';
+  document.getElementById('cursoAulas').value='';
+  document.getElementById('cursoDesc').value='';
+  document.getElementById('cursoModalTitle').textContent='Novo Curso';
+  document.getElementById('cursoModal').classList.add('open');
+};
+
+window.editCurso = function(id) {
+  const c=allCursos.find(x=>x.id===id); if(!c)return;
+  document.getElementById('cursoId').value=id;
+  document.getElementById('cursoTitulo').value=c.titulo||'';
+  document.getElementById('cursoNivel').value=c.nivel||'Iniciante';
+  document.getElementById('cursoPreco').value=c.preco||'';
+  document.getElementById('cursoDuracao').value=c.duracao||'';
+  document.getElementById('cursoAulas').value=c.aulas||'';
+  document.getElementById('cursoDesc').value=c.desc||'';
+  document.getElementById('cursoModalTitle').textContent='Editar Curso';
+  document.getElementById('cursoModal').classList.add('open');
+};
+
+window.closeCursoForm = ()=>document.getElementById('cursoModal').classList.remove('open');
+
+window.salvarCurso = async function() {
+  const id   = document.getElementById('cursoId').value;
+  const data = {
+    titulo:   document.getElementById('cursoTitulo').value.trim(),
+    nivel:    document.getElementById('cursoNivel').value,
+    preco:    parseFloat(document.getElementById('cursoPreco').value)||0,
+    duracao:  parseInt(document.getElementById('cursoDuracao').value)||0,
+    aulas:    parseInt(document.getElementById('cursoAulas').value)||0,
+    desc:     document.getElementById('cursoDesc').value.trim(),
+    ativo:    true,
+  };
+  if(!data.titulo||!data.preco){alert('Preencha título e preço.');return;}
+  if(id) await updateDoc(doc(db,'cursos',id),data);
+  else   await addDoc(collection(db,'cursos'),data);
+  closeCursoForm();
+};
+
+window.deleteCurso = async function(id) {
+  if(!confirm('Excluir este curso?'))return;
+  await deleteDoc(doc(db,'cursos',id));
+};
+
+// ── TABS ──
+window.showTab = function(name) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names=['dashboard','pedidos','produtos','cursos','estoque','clientes'];
+    t.classList.toggle('active',names[i]===name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='clientes') loadClientes();
+};
+
+// ── CLIENTES ──
+async function loadClientes() {
+  const tbody = document.getElementById('clientesTbody');
+  tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);font-size:.82rem;"><span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(245,196,0,.2);border-top-color:var(--y);border-radius:50%;animation:spin .8s linear infinite;margin-right:.5rem;vertical-align:middle;"></span>Carregando...</td></tr>';
+
+  try {
+    // Use Firebase Auth REST API to list users
+    const user = auth.currentUser;
+    if(!user) return;
+    const token = await user.getIdToken();
+
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/projects/edufer-93f8b/accounts:query`,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body:JSON.stringify({returnUserInfo:true})
+      }
+    );
+
+    // Fallback: build client list from pedidos since Auth admin needs server SDK
+    // Instead, aggregate clients from pedidos collection
+    const clientMap = {};
+    allPedidos.forEach(p => {
+      const email = p.cliente?.email || p.userEmail;
+      if(!email) return;
+      if(!clientMap[email]) {
+        clientMap[email] = {
+          nome: p.cliente?.nome || '—',
+          email,
+          uid: p.userUID || '—',
+          pedidos: 0,
+          gasto: 0,
+          primeiroEm: p.criadoEm,
+          ultimoEm: p.criadoEm,
+        };
+      }
+      clientMap[email].pedidos++;
+      if(p.status!=='cancelado') clientMap[email].gasto += (p.total||0);
+      if(p.criadoEm < clientMap[email].primeiroEm) clientMap[email].primeiroEm = p.criadoEm;
+      if(p.criadoEm > clientMap[email].ultimoEm)   clientMap[email].ultimoEm   = p.criadoEm;
+    });
+
+    const clientes = Object.values(clientMap).sort((a,b)=>b.gasto-a.gasto);
+    document.getElementById('clienteCount').textContent = clientes.length + ' cliente(s)';
+
+    if(!clientes.length) {
+      tbody.innerHTML='<tr><td colspan="7" class="empty-state">Nenhum cliente com pedidos ainda</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = clientes.map(c => `
+      <tr>
+        <td><strong>${c.nome}</strong></td>
+        <td style="font-size:.8rem;color:var(--muted)">${c.email}</td>
+        <td style="text-align:center"><span class="badge badge-yellow">${c.pedidos}</span></td>
+        <td style="font-family:'Orbitron',sans-serif;color:var(--y);font-size:.82rem">${fmt(c.gasto)}</td>
+        <td style="color:var(--muted);font-size:.78rem">${fdate(c.primeiroEm)}</td>
+        <td style="color:var(--muted);font-size:.78rem">${fdate(c.ultimoEm)}</td>
+        <td>
+          <button class="act-btn" onclick="filtrarPedidosCliente('${c.email}')">Ver Pedidos</button>
+        </td>
+      </tr>`).join('');
+
+    // Update dashboard stat
+    document.getElementById('dProdutos').textContent = clientes.length;
+
+  } catch(e) {
+    console.error(e);
+    tbody.innerHTML='<tr><td colspan="7" class="empty-state">Erro ao carregar clientes</td></tr>';
+  }
+}
+
+window.filtrarPedidosCliente = function(email) {
+  showTab('pedidos');
+  const sel = document.getElementById('filterStatus');
+  if(sel) sel.value = '';
+  // Filter pedidos by this client email
+  const tbody = document.getElementById('pedidosTbody');
+  const list = allPedidos.filter(p=>(p.cliente?.email||p.userEmail)===email);
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="6" class="empty-state">Nenhum pedido para '+email+'</td></tr>';
+    return;
+  }
+  // Reuse renderPedidos logic with filtered list
+  renderPedidosList(list);
+};
+
+// Split renderPedidos to support filtered list
+window.renderPedidos = function() {
+  const filter = document.getElementById('filterStatus')?.value||'';
+  const list = filter ? allPedidos.filter(p=>p.status===filter) : allPedidos;
+  renderPedidosList(list);
+};
+
+function renderPedidosList(list) {
+  const tbody = document.getElementById('pedidosTbody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="6" class="empty-state">Nenhum pedido encontrado</td></tr>';return;}
+  let rows = '';
+  list.forEach(p => {
+    const st = STATUS[p.status]||{label:p.status,badge:'badge-gray'};
+    const next = STATUS_NEXT[p.status];
+    const itensHTML = (p.itens||[]).map(i=>'<div>'+i.nome+' &mdash; '+i.cor+' ('+i.qty+'x) <strong style="color:var(--y)">'+fmt(i.preco*i.qty)+'</strong></div>').join('');
+    const histHTML  = (p.historico||[]).slice().reverse().map(h2=>'<div style="color:var(--muted);font-size:.75rem">'+fdate(h2.data)+' &mdash; '+(STATUS[h2.status]?.label||h2.status)+(h2.obs?' &middot; '+h2.obs:'')+'</div>').join('');
+    const nextBtn   = next ? '<button class="act-btn green" onclick="event.stopPropagation();avancar(\''+p.id+'\',\''+next+'\')">&#9654; '+STATUS[next].label+'</button>' : '';
+    const cancelBtn = (p.status!=='cancelado'&&p.status!=='entregue') ? '<button class="act-btn red" onclick="event.stopPropagation();cancelarPed(\''+p.id+'\')">Cancelar</button>' : '';
+    rows += '<tr style="cursor:pointer" onclick="toggleOrder(\''+p.id+'\')">'+
+      '<td><span style="font-family:\'Orbitron\',sans-serif;font-size:.75rem;color:var(--y)">'+(p.numero||'&mdash;')+'</span></td>'+
+      '<td>'+(p.cliente?.nome||'&mdash;')+'<br><span style="font-size:.72rem;color:var(--muted)">'+(p.cliente?.email||'')+'</span></td>'+
+      '<td style="font-family:\'Orbitron\',sans-serif;color:var(--y)">'+fmt(p.total)+'</td>'+
+      '<td><span class="badge '+st.badge+'">'+st.label+'</span></td>'+
+      '<td style="color:var(--muted);font-size:.8rem">'+fdate(p.criadoEm)+'</td>'+
+      '<td>'+nextBtn+cancelBtn+'</td>'+
+      '</tr>'+
+      '<tr class="order-expand" id="exp_'+p.id+'"><td colspan="6">'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:.82rem;">'+
+          '<div>'+
+            '<div style="color:var(--muted);margin-bottom:.3rem;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;">Itens</div>'+
+            itensHTML+
+            '<div style="margin-top:.4rem;color:var(--muted)">Frete '+(p.frete?.tipo||'')+': <strong>'+fmt(p.frete?.preco)+'</strong></div>'+
+          '</div>'+
+          '<div>'+
+            '<div style="color:var(--muted);margin-bottom:.3rem;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;">Entrega</div>'+
+            '<div>'+(p.endereco?.completo||'&mdash;')+'</div>'+
+            '<div style="margin-top:.5rem;color:var(--muted);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;">Hist&oacute;rico</div>'+
+            histHTML+
+          '</div>'+
+        '</div>'+
+        '<div class="obs-row">'+
+          '<input class="obs-inp" id="obsInp_'+p.id+'" placeholder="Adicionar observa&ccedil;&atilde;o ou c&oacute;digo de rastreio...">'+
+          '<button class="act-btn" onclick="addObs(\''+p.id+'\')">Adicionar</button>'+
+        '</div>'+
+      '</td></tr>';
+  });
+  tbody.innerHTML = rows;
+}
+</script>
+</body>
+</html>

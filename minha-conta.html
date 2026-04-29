@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EDUFER — Minha Conta</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--y:#f5c400;--y2:#ffe066;--bg:#181818;--bg2:#1e1e1e;--bg3:#242424;--text:#f0f0f0;--muted:#777;--border:rgba(245,196,0,.15);--red:#d95555;--green:#3ecf80;--blue:#00b4d8;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(245,196,0,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(245,196,0,.025) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0;}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:.9rem 2rem;background:rgba(15,15,15,.97);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);}
+.logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.4rem;color:var(--y);letter-spacing:.15em;text-decoration:none;}
+.nav-right{display:flex;align-items:center;gap:1rem;}
+.nav-link{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .3s;}
+.nav-link:hover{color:var(--y);}
+#navUserName{font-family:'Orbitron',sans-serif;font-size:.68rem;color:var(--y);letter-spacing:.1em;}
+.btn-nav-logout{background:transparent;border:1px solid rgba(217,85,85,.3);color:var(--red);font-family:'Orbitron',sans-serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .8rem;cursor:pointer;transition:background .2s;}
+.btn-nav-logout:hover{background:rgba(217,85,85,.1);}
+
+/* AUTH SCREEN */
+#authScreen{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);padding:1.5rem;position:relative;z-index:1;}
+.auth-box{background:var(--bg2);border:1px solid var(--border);width:100%;max-width:420px;}
+.auth-top{height:3px;background:var(--y);box-shadow:0 0 16px rgba(245,196,0,.4);}
+.auth-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.06);}
+.auth-tab{flex:1;padding:.9rem;text-align:center;font-family:'Orbitron',sans-serif;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .25s;}
+.auth-tab.active{color:var(--y);border-bottom-color:var(--y);}
+.auth-body{padding:1.8rem;}
+.auth-panel{display:none;}.auth-panel.active{display:block;}
+.field-group{display:flex;flex-direction:column;gap:.3rem;margin-bottom:1rem;}
+.field-label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+.field-input{background:#111;border:1px solid rgba(255,255,255,.07);color:var(--text);padding:.78rem 1rem;font-family:'Rajdhani',sans-serif;font-size:.95rem;outline:none;border-radius:0;transition:border-color .25s;-webkit-appearance:none;}
+.field-input:focus{border-color:rgba(245,196,0,.45);}
+.field-input::placeholder{color:#333;}
+.btn-auth{width:100%;background:var(--y);color:#111;border:none;padding:.9rem;font-family:'Orbitron',sans-serif;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;font-weight:700;transition:background .3s;margin-top:.5rem;}
+.btn-auth:hover{background:var(--y2);}
+.btn-auth:disabled{background:#333;color:#555;cursor:not-allowed;}
+.auth-err{color:var(--red);font-size:.75rem;text-align:center;margin-top:.7rem;min-height:1rem;}
+.auth-ok{color:var(--green);font-size:.75rem;text-align:center;margin-top:.7rem;}
+.forgot-link{text-align:right;display:block;font-size:.72rem;color:var(--muted);text-decoration:none;margin-top:-.5rem;margin-bottom:.8rem;cursor:pointer;}
+.forgot-link:hover{color:var(--y);}
+
+/* ACCOUNT SCREEN */
+#accountScreen{display:none;position:relative;z-index:1;max-width:900px;margin:0 auto;padding:2rem 1.5rem 5rem;}
+.account-header{display:flex;align-items:center;gap:1.2rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(245,196,0,.1);}
+.avatar{width:56px;height:56px;border-radius:50%;background:rgba(245,196,0,.1);border:2px solid rgba(245,196,0,.3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:700;color:var(--y);flex-shrink:0;}
+.account-name{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:var(--text);letter-spacing:.04em;}
+.account-email{font-size:.8rem;color:var(--muted);margin-top:.2rem;}
+.account-since{font-size:.7rem;color:var(--muted);margin-top:.1rem;letter-spacing:.05em;}
+
+/* STATS ROW */
+.acc-stats{display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;}
+.acc-stat{background:var(--bg2);border:1px solid var(--border);padding:1rem 1.3rem;flex:1;min-width:120px;}
+.acc-stat-num{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:700;color:var(--y);display:block;}
+.acc-stat-label{font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:.2rem;display:block;}
+
+/* SECTION */
+.acc-section-title{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.7rem;}
+.acc-section-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+
+/* ORDER CARDS */
+.orders-list{display:flex;flex-direction:column;gap:1rem;}
+.order-card{background:var(--bg2);border:1px solid rgba(245,196,0,.1);overflow:hidden;transition:border-color .3s;}
+.order-card:hover{border-color:rgba(245,196,0,.25);}
+.order-card-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem;cursor:pointer;flex-wrap:wrap;gap:.5rem;}
+.order-num{font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:700;color:var(--y);}
+.order-date{font-size:.72rem;color:var(--muted);}
+.order-total{font-family:'Orbitron',sans-serif;font-size:.92rem;font-weight:700;color:var(--text);}
+.order-badge{font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .65rem;border:1px solid;font-weight:700;}
+.badge-yellow{color:var(--y);border-color:rgba(245,196,0,.3);background:rgba(245,196,0,.07);}
+.badge-green{color:var(--green);border-color:rgba(62,207,128,.3);background:rgba(62,207,128,.07);}
+.badge-blue{color:var(--blue);border-color:rgba(0,180,216,.3);background:rgba(0,180,216,.07);}
+.badge-red{color:var(--red);border-color:rgba(217,85,85,.3);background:rgba(217,85,85,.07);}
+.badge-gray{color:var(--muted);border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.04);}
+
+/* ORDER DETAIL */
+.order-detail{display:none;border-top:1px solid rgba(255,255,255,.05);padding:1.2rem;}
+.order-detail.open{display:block;}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:0;margin-bottom:1.2rem;}
+.tl-step{display:flex;align-items:flex-start;gap:.9rem;}
+.tl-dot{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;background:#111;transition:all .3s;}
+.tl-step.done .tl-dot{border-color:var(--y);background:rgba(245,196,0,.08);}
+.tl-step.current .tl-dot{border-color:var(--y);background:rgba(245,196,0,.15);box-shadow:0 0 10px rgba(245,196,0,.3);}
+.tl-info{flex:1;padding-top:.4rem;}
+.tl-label{font-size:.85rem;font-weight:600;color:var(--muted);}
+.tl-step.done .tl-label,.tl-step.current .tl-label{color:var(--text);}
+.tl-step.current .tl-label{color:var(--y);}
+.tl-obs{font-size:.72rem;color:var(--muted);margin-top:.1rem;}
+.tl-line{width:2px;height:20px;background:rgba(255,255,255,.05);margin-left:15px;}
+.tl-step.done + .tl-line{background:rgba(245,196,0,.2);}
+
+/* ITEMS */
+.order-items{background:#111;border:1px solid rgba(255,255,255,.05);padding:.8rem 1rem;margin-bottom:1rem;}
+.order-item{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted);padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.order-item:last-child{border-bottom:none;}
+.order-item strong{color:var(--text);}
+.order-item.total-line{border-top:1px solid rgba(245,196,0,.1);margin-top:.3rem;padding-top:.5rem;font-size:.9rem;}
+.order-item.total-line strong{color:var(--y);font-family:'Orbitron',sans-serif;}
+
+/* TRACK BTN */
+.btn-track{display:inline-flex;align-items:center;gap:.5rem;background:transparent;border:1px solid rgba(245,196,0,.3);color:var(--y);font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;padding:.55rem 1.1rem;cursor:pointer;text-decoration:none;transition:background .3s;}
+.btn-track:hover{background:rgba(245,196,0,.08);}
+
+/* EMPTY */
+.empty-orders{text-align:center;padding:3rem 1rem;color:var(--muted);}
+.empty-icon{font-size:3rem;display:block;margin-bottom:1rem;opacity:.3;}
+.empty-text{font-size:.88rem;margin-bottom:1.5rem;}
+.btn-shop{display:inline-block;background:var(--y);color:#111;font-family:'Orbitron',sans-serif;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;padding:.75rem 1.8rem;text-decoration:none;font-weight:700;transition:background .3s;}
+.btn-shop:hover{background:var(--y2);}
+
+/* LOADING */
+.loading{text-align:center;padding:2rem;color:var(--muted);font-size:.82rem;}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(245,196,0,.2);border-top-color:var(--y);border-radius:50%;animation:spin .8s linear infinite;margin-right:.5rem;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:500px){
+  nav{padding:.8rem 1rem;}
+  #accountScreen{padding:1.2rem 1rem 4rem;}
+  .acc-stats{gap:.6rem;}
+  .order-card-header{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" href="edufer.html">EDUFER</a>
+  <div class="nav-right">
+    <a class="nav-link" href="edufer.html">← Voltar à Loja</a>
+    <span id="navUserName" style="display:none"></span>
+    <button class="btn-nav-logout" id="btnLogout" style="display:none" onclick="doLogout()">Sair</button>
+  </div>
+</nav>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-top"></div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuth('login')">Entrar</div>
+      <div class="auth-tab" onclick="switchAuth('cadastro')">Criar Conta</div>
+    </div>
+    <div class="auth-body">
+
+      <!-- LOGIN -->
+      <div class="auth-panel active" id="panelLogin">
+        <div class="field-group">
+          <label class="field-label">E-mail</label>
+          <input class="field-input" type="email" id="loginEmail" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Senha</label>
+          <input class="field-input" type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <span class="forgot-link" onclick="doForgot()">Esqueci minha senha</span>
+        <button class="btn-auth" id="btnLogin" onclick="doLogin()">Entrar na Minha Conta</button>
+        <div class="auth-err" id="loginErr"></div>
+      </div>
+
+      <!-- CADASTRO -->
+      <div class="auth-panel" id="panelCadastro">
+        <div class="field-group">
+          <label class="field-label">Nome completo</label>
+          <input class="field-input" type="text" id="cadNome" placeholder="Seu nome">
+        </div>
+        <div class="field-group">
+          <label class="field-label">E-mail</label>
+          <input class="field-input" type="email" id="cadEmail" placeholder="seu@email.com">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Senha (mínimo 6 caracteres)</label>
+          <input class="field-input" type="password" id="cadPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doCadastro()">
+        </div>
+        <button class="btn-auth" id="btnCadastro" onclick="doCadastro()">Criar Minha Conta</button>
+        <div class="auth-err" id="cadErr"></div>
+        <div class="auth-ok" id="cadOk"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ACCOUNT SCREEN -->
+<div id="accountScreen">
+  <div class="account-header">
+    <div class="avatar" id="userAvatar">?</div>
+    <div>
+      <div class="account-name" id="userName">—</div>
+      <div class="account-email" id="userEmail">—</div>
+      <div class="account-since" id="userSince"></div>
+    </div>
+  </div>
+
+  <div class="acc-stats">
+    <div class="acc-stat"><span class="acc-stat-num" id="statTotal">0</span><span class="acc-stat-label">Pedidos</span></div>
+    <div class="acc-stat"><span class="acc-stat-num" id="statGasto">R$0</span><span class="acc-stat-label">Total Gasto</span></div>
+    <div class="acc-stat"><span class="acc-stat-num" id="statAndamento">0</span><span class="acc-stat-label">Em Andamento</span></div>
+  </div>
+
+  <div class="acc-section-title">Meus Pedidos</div>
+  <div id="ordersList">
+    <div class="loading"><span class="spinner"></span>Carregando pedidos...</div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyD-NbZZccUTRgMzk92yZJ709AZNo6JtFsY",
+  authDomain:        "edufer-93f8b.firebaseapp.com",
+  projectId:         "edufer-93f8b",
+  storageBucket:     "edufer-93f8b.firebasestorage.app",
+  messagingSenderId: "563132675062",
+  appId:             "1:563132675062:web:cf5c101dfe88c51c29cdd7"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+const STATUS = {
+  aguardando_pagamento: { label:'Aguardando Pagamento', icon:'⏳', badge:'badge-yellow' },
+  pagamento_confirmado: { label:'Pagamento Confirmado',  icon:'✅', badge:'badge-green' },
+  em_separacao:         { label:'Em Separação',           icon:'📦', badge:'badge-blue' },
+  enviado:              { label:'Enviado / Em Trânsito',  icon:'🚚', badge:'badge-blue' },
+  entregue:             { label:'Entregue',               icon:'🎉', badge:'badge-green' },
+  cancelado:            { label:'Cancelado',              icon:'❌', badge:'badge-red' },
+};
+const STATUS_ORDER = ['aguardando_pagamento','pagamento_confirmado','em_separacao','enviado','entregue'];
+
+function fmt(v){ return 'R$ '+(v||0).toFixed(2).replace('.',','); }
+function fdate(iso){ if(!iso)return'—'; return new Date(iso).toLocaleDateString('pt-BR'); }
+function initials(name){ if(!name)return'?'; return name.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase(); }
+
+// ── AUTH STATE ──
+onAuthStateChanged(auth, user => {
+  if (user) {
+    showAccount(user);
+    loadPedidos(user.email);
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('accountScreen').style.display = 'none';
+    document.getElementById('navUserName').style.display = 'none';
+    document.getElementById('btnLogout').style.display = 'none';
+  }
+});
+
+function showAccount(user) {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('accountScreen').style.display = 'block';
+  const name = user.displayName || user.email.split('@')[0];
+  document.getElementById('userAvatar').textContent = initials(name);
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userEmail').textContent = user.email;
+  document.getElementById('userSince').textContent = 'Membro desde ' + fdate(user.metadata.creationTime);
+  document.getElementById('navUserName').textContent = name.split(' ')[0];
+  document.getElementById('navUserName').style.display = 'inline';
+  document.getElementById('btnLogout').style.display = 'inline-block';
+}
+
+// ── LOGIN ──
+window.doLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('btnLogin');
+  const err   = document.getElementById('loginErr');
+  if(!email||!pass){err.textContent='Preencha e-mail e senha.';return;}
+  btn.disabled=true; btn.textContent='Entrando...'; err.textContent='';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    const msgs={'auth/invalid-credential':'E-mail ou senha incorretos.','auth/too-many-requests':'Muitas tentativas. Aguarde um momento.','auth/user-not-found':'E-mail não cadastrado.'};
+    err.textContent = msgs[e.code]||'Erro ao entrar. Tente novamente.';
+    btn.disabled=false; btn.textContent='Entrar na Minha Conta';
+  }
+};
+
+// ── CADASTRO ──
+window.doCadastro = async function() {
+  const nome  = document.getElementById('cadNome').value.trim();
+  const email = document.getElementById('cadEmail').value.trim();
+  const pass  = document.getElementById('cadPass').value;
+  const btn   = document.getElementById('btnCadastro');
+  const err   = document.getElementById('cadErr');
+  const ok    = document.getElementById('cadOk');
+  if(!nome||!email||!pass){err.textContent='Preencha todos os campos.';return;}
+  if(pass.length<6){err.textContent='Senha deve ter pelo menos 6 caracteres.';return;}
+  btn.disabled=true; btn.textContent='Criando conta...'; err.textContent=''; ok.textContent='';
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(cred.user, {displayName: nome});
+  } catch(e) {
+    const msgs={'auth/email-already-in-use':'Este e-mail já está cadastrado.','auth/weak-password':'Senha muito fraca.','auth/invalid-email':'E-mail inválido.'};
+    err.textContent = msgs[e.code]||'Erro ao criar conta.';
+    btn.disabled=false; btn.textContent='Criar Minha Conta';
+  }
+};
+
+// ── FORGOT ──
+window.doForgot = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const err   = document.getElementById('loginErr');
+  if(!email){err.textContent='Digite seu e-mail acima primeiro.';err.style.color='var(--y)';return;}
+  try {
+    await sendPasswordResetEmail(auth, email);
+    err.textContent='✓ E-mail de redefinição enviado!';
+    err.style.color='var(--green)';
+  } catch(e) {
+    err.textContent='Erro ao enviar e-mail.';
+    err.style.color='var(--red)';
+  }
+};
+
+// ── LOGOUT ──
+window.doLogout = async function() {
+  await signOut(auth);
+};
+
+// ── SWITCH TAB ──
+window.switchAuth = function(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',['login','cadastro'][i]===tab));
+  document.getElementById('panelLogin').classList.toggle('active',tab==='login');
+  document.getElementById('panelCadastro').classList.toggle('active',tab==='cadastro');
+};
+
+// ── LOAD PEDIDOS ──
+async function loadPedidos(email) {
+  try {
+    const q = query(collection(db,'pedidos'), where('cliente.email','==',email));
+    const snap = await getDocs(q);
+    const pedidos = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>new Date(b.criadoEm)-new Date(a.criadoEm));
+    renderPedidos(pedidos);
+  } catch(e) {
+    document.getElementById('ordersList').innerHTML='<div class="loading">Erro ao carregar pedidos.</div>';
+  }
+}
+
+function renderPedidos(pedidos) {
+  const el = document.getElementById('ordersList');
+
+  // Stats
+  const gasto = pedidos.filter(p=>p.status!=='cancelado').reduce((s,p)=>s+(p.total||0),0);
+  const andamento = pedidos.filter(p=>!['entregue','cancelado'].includes(p.status)).length;
+  document.getElementById('statTotal').textContent = pedidos.length;
+  document.getElementById('statGasto').textContent = 'R$'+gasto.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('statAndamento').textContent = andamento;
+
+  if(!pedidos.length) {
+    el.innerHTML=`
+      <div class="empty-orders">
+        <span class="empty-icon">📦</span>
+        <div class="empty-text">Você ainda não fez nenhum pedido.</div>
+        <a class="btn-shop" href="edufer.html">Ver Produtos</a>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = '<div class="orders-list">'+pedidos.map(p => {
+    const st = STATUS[p.status]||{label:p.status,icon:'❓',badge:'badge-gray'};
+    const curIdx = STATUS_ORDER.indexOf(p.status);
+
+    const timelineHTML = STATUS_ORDER.map((s,i)=>{
+      const sl = STATUS[s];
+      const done = i <= curIdx && p.status !== 'cancelado';
+      const current = i === curIdx && p.status !== 'cancelado';
+      const hist = (p.historico||[]).find(h=>h.status===s);
+      return `
+        <div class="tl-step ${done?'done':''} ${current?'current':''}">
+          <div class="tl-dot">${done||current?sl.icon:''}</div>
+          <div class="tl-info">
+            <div class="tl-label">${sl.label}</div>
+            ${hist&&hist.obs?`<div class="tl-obs">${hist.obs}</div>`:''}
+            ${current&&hist?`<div class="tl-obs" style="color:var(--muted)">${fdate(hist.data)}</div>`:''}
+          </div>
+        </div>
+        ${i<STATUS_ORDER.length-1?'<div class="tl-line"></div>':''}`;
+    }).join('');
+
+    const itemsHTML = (p.itens||[]).map(i=>`
+      <div class="order-item">
+        <span>${i.nome} — ${i.cor} <span style="color:var(--y)">(${i.qty}x)</span></span>
+        <strong>${fmt(i.preco*i.qty)}</strong>
+      </div>`).join('') +
+      `<div class="order-item"><span>Frete ${p.frete?.tipo||''}</span><strong>${fmt(p.frete?.preco)}</strong></div>
+       <div class="order-item total-line"><span>Total</span><strong>${fmt(p.total)}</strong></div>`;
+
+    return `
+    <div class="order-card">
+      <div class="order-card-header" onclick="toggleDetail('od_${p.id}')">
+        <div>
+          <div class="order-num">${p.numero||'—'}</div>
+          <div class="order-date">${fdate(p.criadoEm)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;">
+          <span class="order-badge ${st.badge}">${st.icon} ${st.label}</span>
+          <span class="order-total">${fmt(p.total)}</span>
+          <span style="color:var(--muted);font-size:.8rem">▼</span>
+        </div>
+      </div>
+      <div class="order-detail" id="od_${p.id}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.2rem;" class="detail-grid">
+          <div>
+            <div style="font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;">Acompanhamento</div>
+            <div class="timeline">${timelineHTML}</div>
+          </div>
+          <div>
+            <div style="font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;">Itens do Pedido</div>
+            <div class="order-items">${itemsHTML}</div>
+            <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">${p.endereco?.completo||''}</div>
+          </div>
+        </div>
+        <a class="btn-track" href="rastreio.html?pedido=${p.numero}" target="_blank">
+          📦 Rastrear Pedido
+        </a>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+
+  // Responsive grid fix
+  document.querySelectorAll('.detail-grid').forEach(g=>{
+    if(window.innerWidth<600) g.style.gridTemplateColumns='1fr';
+  });
+}
+
+window.toggleDetail = function(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+  const arrow = el.previousElementSibling?.querySelector('span:last-child');
+  if(arrow) arrow.textContent = el.classList.contains('open') ? '▲' : '▼';
+};
+</script>
+</body>
+</html>
